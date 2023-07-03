@@ -7,6 +7,25 @@
     <title>Vite + TS</title>
   </head>
   <body>
+    <script id="fragment-shader" type="x-shader/x-fragment">
+      precision mediump float;
+
+      void main(){
+          gl_FragColor = vec4(1, 0, 0, 1.0);
+      }
+
+    </script>
+
+    <script id="vertex-shader" type="x-shader/x-vertex">
+      attribute vec4 position;
+
+      void main(){
+          gl_Position = position;
+      }
+
+    </script>
+
+
     <canvas id="app" width="300" height="300"></canvas>
     <script type="module" src="/src/main.ts"></script>
   </body>
