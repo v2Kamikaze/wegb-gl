@@ -12,10 +12,29 @@ export const GLUtils = {
     return gl;
   },
 
+  CreateArrayBuffer: function (gl: WebGLRenderingContext, program: WebGLProgram, attrName: string, data: BufferSource): number {
+    const bufferPointer = gl.createBuffer();
+    if (!bufferPointer) {
+      throw new Error("Não foi possível criar o buffer.");
+    }
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, bufferPointer);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+
+    const positionPointer = gl.getAttribLocation(program, attrName);
+    if (positionPointer === -1) {
+      throw new Error(`Não foi possível obter '${attrName}'.`);
+    }
+
+    return positionPointer;
+  },
+
   ClearCanvas: function (gl: WebGLRenderingContext) {
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     gl.clearColor(0, 0, 0, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   },
 
   CreateProgram: function (

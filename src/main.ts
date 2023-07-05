@@ -1,5 +1,7 @@
 import { GLUtils } from "./gl_utils";
 
+const BLOCK_SIZE = 6 * 4;
+
 const gl = GLUtils.InitGL();
 
 const vertexShaderSrc = document.getElementById("vertex-shader")!.innerText;
@@ -11,12 +13,15 @@ const program = GLUtils.CreateProgram(gl, vertexShader, fragmentShader);
 
 gl.useProgram(program);
 
-const triangle = Float32Array.from([0.0, 0.25, -0.25, -0.25, 0.25, -0.25]);
+// prettier-ignore
+const triangle = Float32Array.from([
+    0.0,  0.25, 1.0, 0.0, 0.0, 0.5,
+  -0.25, -0.25, 0.0, 1.0, 0.0, 0.8,
+   0.25, -0.25, 0.0, 0.0, 1.0, 0.2,
+]);
 
-const bufferPointer = gl.createBuffer();
-gl.bindBuffer(gl.ARRAY_BUFFER, bufferPointer);
-gl.bufferData(gl.ARRAY_BUFFER, triangle, gl.STATIC_DRAW);
-const positionPointer = gl.getAttribLocation(program, "position");
+
+const positionPointer = GLUtils.CreateArrayBuffer(gl, program, "external_position", triangle);
 
 gl.enableVertexAttribArray(positionPointer);
 
@@ -25,10 +30,26 @@ gl.vertexAttribPointer(
   2, // quantidade de dados em cada processamento
   gl.FLOAT, // tipo de cada dado (tamanho)
   false, // normalizar
-  2 * 4, // tamanho do bloco
+  BLOCK_SIZE, // tamanho do bloco
   0 // salto inicial
 );
+
+const colorPointer = GLUtils.CreateArrayBuffer(gl, program, "external_color", triangle);
+gl.enableVertexAttribArray(colorPointer);
+
+gl.vertexAttribPointer(
+  colorPointer,
+  4, // quantidade de dados em cada processamento
+  gl.FLOAT, // tipo de cada dado (tamanho)
+  false, // normalizar
+  BLOCK_SIZE, // tamanho do bloco
+  2 * 4 // salto inicial
+);
+
 
 GLUtils.ClearCanvas(gl);
 
 gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+
+
