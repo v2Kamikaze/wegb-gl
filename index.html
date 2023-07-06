@@ -19,24 +19,29 @@
 </style>
 
 <body>
-  <script id="fragment-shader" type="x-shader/x-fragment">
-      precision mediump float;
-      varying vec4 color;
-
-      void main(){
-          gl_FragColor = color;
-      }
-    </script>
 
   <script id="vertex-shader" type="x-shader/x-vertex">
-      attribute vec4 external_position;
-      attribute vec4 external_color;
+    attribute vec4 external_position;
+    attribute vec2 external_texture_coord;
 
-      varying vec4 color;
+    uniform mat4 external_transform;
+
+    varying vec2 texture_coord;
+
+    void main(){
+        texture_coord = external_texture_coord;
+        gl_Position = external_transform * external_position;
+    }
+  </script>
+
+  <script id="fragment-shader" type="x-shader/x-fragment">
+      precision mediump float;
+
+      uniform sampler2D texture_src;
+      varying vec2 texture_coord;
 
       void main(){
-          color = external_color;
-          gl_Position = external_position;
+          gl_FragColor = texture2D(texture_src, texture_coord);
       }
     </script>
 
