@@ -9,6 +9,13 @@ export const GLUtils = {
       window.alert("Seu navegador não suporta WebGL");
     }
 
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.clearColor(0, 0, 0, 1);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.enable(gl.DEPTH_TEST);
+    //gl.enable(gl.CULL_FACE);
+
     return gl;
   },
 
@@ -70,12 +77,8 @@ export const GLUtils = {
     return positionPointer;
   },
 
-  SetAndClearCanvas: function (gl: WebGLRenderingContext) {
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.clearColor(0, 0, 0, 1);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  ClearCanvas: function (gl: WebGLRenderingContext) {
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   },
 
   CreateProgram: function (
