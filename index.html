@@ -9,40 +9,18 @@
 
   <style>
     body {
-      display: grid;
-      max-width: 1100px;
-      align-items: center;
-      justify-content: center;
-      margin: 160px auto;
+      margin: 0;
+      padding: 0;
+    }
+
+    canvas {
+      width: 500px;
+      height: 500px;
+      display: block;
     }
   </style>
 
   <body>
-    <script id="vertex-shader" type="x-shader/x-vertex">
-      attribute vec4 external_position;
-      attribute vec2 external_texture_coord;
-
-      uniform mat4 external_transform;
-
-      varying vec2 texture_coord;
-
-      void main(){
-          texture_coord = external_texture_coord;
-          gl_Position = external_transform * external_position;
-      }
-    </script>
-
-    <script id="fragment-shader" type="x-shader/x-fragment">
-      precision mediump float;
-
-      uniform sampler2D texture_src;
-      varying vec2 texture_coord;
-
-      void main(){
-          gl_FragColor = texture2D(texture_src, texture_coord);
-      }
-    </script>
-
     <canvas id="app" width="600" height="600"></canvas>
     <script type="module" src="/src/main.ts"></script>
   </body>

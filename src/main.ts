@@ -1,104 +1,125 @@
+import { glMatrix, mat4, vec3 } from "gl-matrix";
 import { GLUtils } from "./gl_utils";
-import { Mat } from "./mat";
 import { Polygons } from "./polygons";
-import { multiply, transpose, flatten } from "mathjs";
+import { Shaders } from "./shaders";
+import { objMock, parseOBJ } from "./obj";
 
+console.log(parseOBJ(objMock));
+
+// Shaders e inicializações do WegbGL
 const gl = GLUtils.InitGL();
-const aspectRatio = gl.canvas.width / gl.canvas.height;
+const canvasWidth = gl.canvas.width;
+const canvasHeight = gl.canvas.height;
+const aspectRatio = canvasWidth / canvasHeight;
 
-var ANGLE = 0;
-
-const vertexShaderSrc = document.getElementById("vertex-shader")!.innerText;
-const fragmentShaderSrc = document.getElementById("fragment-shader")!.innerText;
-const vertexShader = GLUtils.CreateVertexShader(gl, vertexShaderSrc);
-const fragmentShader = GLUtils.CreateFragmentShader(gl, fragmentShaderSrc);
+const vertexShader = GLUtils.CreateVertexShader(gl, Shaders.vertex.src);
+const fragmentShader = GLUtils.CreateFragmentShader(gl, Shaders.fragment.src);
 const program = GLUtils.CreateProgram(gl, vertexShader, fragmentShader);
 gl.useProgram(program);
 
-let camera = Mat.createCamera([5, 5, 5], [0, 0, 0], [5, 6, 5]);
+const vertices = Polygons.Cube3D.vertices;
+const normals = Polygons.Cube3D.normals;
 
-main();
+const normalPointer = GLUtils.CreateArrayBuffer(
+  gl,
+  program,
+  Shaders.vertex.attributes.aNormal,
+  normals
+);
 
-async function main() {
-  const textures = await GLUtils.LoadTextures([
-    "../assets/gato.png",
-    "../assets/catioro.png",
-  ]);
+const posPointer = GLUtils.CreateArrayBuffer(
+  gl,
+  program,
+  Shaders.vertex.attributes.aPos,
+  vertices
+);
 
-  const positionPointer = GLUtils.CreateArrayBuffer(
-    gl,
+const colorPointer = GLUtils.CreateArrayBuffer(
+  gl,
+  program,
+  Shaders.vertex.attributes.aColor,
+  vertices
+);
+
+gl.vertexAttribPointer(posPointer, 3, gl.FLOAT, false, 6 * 4, 0);
+gl.vertexAttribPointer(colorPointer, 3, gl.FLOAT, false, 6 * 4, 3 * 4);
+gl.vertexAttribPointer(normalPointer, 3, gl.FLOAT, false, 0, 0);
+
+gl.enableVertexAttribArray(posPointer);
+gl.enableVertexAttribArray(colorPointer);
+gl.enableVertexAttribArray(normalPointer);
+
+const uLightDirection = gl.getUniformLocation(
+  program,
+  Shaders.fragment.uniforms.uLightDirection
+);
+
+const uLightColor = gl.getUniformLocation(
+  program,
+  Shaders.fragment.uniforms.uLightColor
+);
+
+gl.uniform3fv(uLightDirection, [3, -5, 3]);
+gl.uniform3fv(uLightColor, [1, 1, 1]);
+
+var angleX = 0;
+var angleY = 0;
+var angleZ = 0;
+var direction = vec3.fromValues(0, 0, -1);
+var target = vec3.fromValues(0, 0, 0);
+var cameraPosition = vec3.fromValues(0, 0, 10);
+
+draw();
+
+document.addEventListener("keydown", (e) => {
+  const keyPressed = e.key.toLowerCase();
+  switch (keyPressed) {
+    case "w":
+      vec3.add(direction, direction, [0, 0, 1]);
+      break;
+    case "s":
+      vec3.add(direction, direction, [0, 0, -1]);
+      break;
+    case "a":
+      vec3.add(direction, direction, [-1 * 0.1, 0, 0]);
+      break;
+    case "d":
+      vec3.add(direction, direction, [1 * 0.1, 0, 0]);
+      break;
+  }
+});
+
+async function draw() {
+  const model = mat4.create();
+  const view = mat4.create();
+  const projection = mat4.create();
+
+  mat4.rotateX(model, model, angleX);
+  mat4.rotateY(model, model, angleY);
+  mat4.rotateZ(model, model, angleZ);
+
+  mat4.lookAt(view, cameraPosition, target, [0, 1, 0]);
+  mat4.translate(view, view, direction);
+
+  mat4.perspective(projection, glMatrix.toRadian(20), aspectRatio, 0.1, 9999);
+
+  const uModel = gl.getUniformLocation(program, Shaders.vertex.uniforms.uModel);
+  const uView = gl.getUniformLocation(program, Shaders.vertex.uniforms.uView);
+  const uProjection = gl.getUniformLocation(
     program,
-    "external_position",
-    Polygons.Cube.vertices
+    Shaders.vertex.uniforms.uProjection
   );
 
-  gl.enableVertexAttribArray(positionPointer);
-
-  // prettier-ignore
-  gl.vertexAttribPointer(
-    positionPointer,
-    3,                       // quantidade de dados em cada processamento
-    gl.FLOAT,                // tipo de cada dado (tamanho)
-    false,                   // normalizar
-    Polygons.Cube.blockSize, // tamanho do bloco
-    0                        // salto inicial
-  );
-
-  const textureCoordPointer = GLUtils.CreateArrayBuffer(
-    gl,
-    program,
-    "external_texture_coord",
-    Polygons.Cube.vertices
-  );
-  gl.enableVertexAttribArray(textureCoordPointer);
-
-  // prettier-ignore
-  gl.vertexAttribPointer(
-    textureCoordPointer,
-    2,                       // quantidade de dados em cada processamento
-    gl.FLOAT,                // tipo de cada dado (tamanho)
-    false,                   // normalizar
-    Polygons.Cube.blockSize, // tamanho do bloco
-    3 * 4                    // salto inicial
-  );
-
-  const rotate = Mat.createRotationMatrix(0, 0, ANGLE);
-  const projPerspective = Mat.createPerspective(20, aspectRatio, 1, 50);
-
-  let transform = multiply(rotate, camera);
-  transform = multiply(projPerspective, transform);
-  transform = transpose(transform);
-  const transformArray = flatten(transform).toArray() as number[];
-
-  // Aplicando transaformação
-  const uTransform = gl.getUniformLocation(program, "external_transform");
-  gl.uniformMatrix4fv(uTransform, false, transformArray);
-
-  // Criando e linkando as texturas
-  const uTextureSrcPointer = gl.getUniformLocation(program, "texture_src");
-
-  const texture0 = gl.createTexture()!;
-  GLUtils.LinkTexture(gl, texture0, gl.TEXTURE0, textures[0]);
-
-  const texture1 = gl.createTexture()!;
-  GLUtils.LinkTexture(gl, texture1, gl.TEXTURE1, textures[1]);
+  gl.uniformMatrix4fv(uModel, false, model);
+  gl.uniformMatrix4fv(uView, false, view);
+  gl.uniformMatrix4fv(uProjection, false, projection);
 
   GLUtils.ClearCanvas(gl);
 
-  // Compartilhando vértices
-  gl.uniform1i(uTextureSrcPointer, 0);
-  gl.drawArrays(gl.TRIANGLES, 0, 3);
-  gl.drawArrays(gl.TRIANGLES, 2, 3);
+  gl.drawArrays(gl.TRIANGLES, 0, 36);
 
-  gl.uniform1i(uTextureSrcPointer, 1);
-  gl.drawArrays(gl.TRIANGLES, 5, 3);
-  gl.drawArrays(gl.TRIANGLES, 7, 3);
-
-  gl.uniform1i(uTextureSrcPointer, 0);
-  gl.drawArrays(gl.TRIANGLES, 10, 3);
-  gl.uniform1i(uTextureSrcPointer, 1);
-  gl.drawArrays(gl.TRIANGLES, 12, 3);
-
-  ANGLE++;
-  requestAnimationFrame(main);
+  angleX += 0.001;
+  angleY += 0.002;
+  angleZ += 0.004;
+  requestAnimationFrame(draw);
 }
