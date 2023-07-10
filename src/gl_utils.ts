@@ -10,7 +10,7 @@ export const GLUtils = {
     }
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.clearColor(0.2, 0.2, 0.2, 1);
+    gl.clearColor(0.1, 0.1, 0.1, 1);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     gl.enable(gl.DEPTH_TEST);

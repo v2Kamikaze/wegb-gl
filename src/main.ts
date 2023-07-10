@@ -7,6 +7,13 @@ import { objMock, parseOBJ } from "./obj";
 const obj = parseOBJ(objMock);
 console.log(obj);
 
+var angleX = 0;
+var angleY = 0;
+var angleZ = 0;
+var direction = vec3.fromValues(0, 0, -1);
+var target = vec3.fromValues(0, 0, 0);
+var cameraPosition = vec3.fromValues(0, 0, 10);
+
 // Shaders e inicializações do WegbGL
 const gl = GLUtils.InitGL();
 const canvasWidth = gl.canvas.width;
@@ -55,16 +62,15 @@ const uLightPosition = gl.getUniformLocation(
   Shaders.vertex.uniforms.uLightPosition
 );
 
+const uCameraPosition = gl.getUniformLocation(
+  program,
+  Shaders.vertex.uniforms.uCameraPosition
+);
+
 gl.uniform3fv(uLightDirection, [0, -5, -3]);
 gl.uniform3fv(uLightColor, [1, 1, 1]);
 gl.uniform3fv(uLightPosition, [0, 5, 1]);
-
-var angleX = 0;
-var angleY = 0;
-var angleZ = 0;
-var direction = vec3.fromValues(0, 0, -1);
-var target = vec3.fromValues(0, 0, 0);
-var cameraPosition = vec3.fromValues(0, 0, 10);
+gl.uniform3fv(uCameraPosition, cameraPosition);
 
 draw();
 
@@ -78,10 +84,10 @@ document.addEventListener("keydown", (e) => {
       vec3.add(direction, direction, [0, 0, -1]);
       break;
     case "a":
-      vec3.add(direction, direction, [-1 * 0.1, 0, 0]);
+      vec3.add(direction, direction, [0.1, 0, 0]);
       break;
     case "d":
-      vec3.add(direction, direction, [1 * 0.1, 0, 0]);
+      vec3.add(direction, direction, [-0.1, 0, 0]);
       break;
   }
 });

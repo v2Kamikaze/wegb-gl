@@ -9,11 +9,14 @@ export const Shaders = {
         uniform mat4 uView;
         uniform mat4 uProjection;
         uniform vec3 uLightPosition;
+        uniform vec3 uCameraPosition;
 
         varying vec3 vNormal;
         varying vec3 vPoint2Light;
+        varying vec3 vCameraPosition;
 
         void main() {
+            vCameraPosition = uCameraPosition - aPos.xyz;
             vPoint2Light = uLightPosition - aPos.xyz;
             vNormal = vec3(uModel * vec4(aNormal, 1.0));
             gl_Position = uProjection * uView * uModel * aPos;
@@ -24,6 +27,7 @@ export const Shaders = {
       uView: "uView",
       uProjection: "uProjection",
       uLightPosition: "uLightPosition",
+      uCameraPosition: "uCameraPosition",
     },
     attributes: {
       aPos: "aPos",
@@ -44,6 +48,7 @@ export const Shaders = {
 
         varying vec3 vNormal;
         varying vec3 vPoint2Light;
+        varying vec3 vCameraPosition;
 
         vec4 color = vec4(1.0, 1.0, 1.0, 1.0);
 
@@ -52,14 +57,21 @@ export const Shaders = {
 
             vec3 point2Light = normalize(vPoint2Light);
             vec3 lightDirection = normalize(-uLightDirection);
+            vec3 cameraPosition = normalize(vCameraPosition);
 
-            float lightD = max(dot(lightDirection, normal), 0.0);
-            float lightP = max(dot(point2Light, normal), 0.0);
+            vec3 halfVec = normalize(cameraPosition + point2Light);
 
-            vec4 colorWithDirLight = 0.2 * vec4(uLightColor * lightD * color.rgb, color.a);
-            vec4 colorWithPosLight = 0.8 * vec4(uLightColor * lightP * color.rgb, color.a);
+            float lightD = max(dot(normal, lightDirection), 0.0);
+            float lightP = max(dot(normal, point2Light), 0.0);
+            float lightE = max(dot(normal, halfVec), 0.0);
 
-            gl_FragColor =  colorWithDirLight + colorWithPosLight;
+            vec4 colorWithDirLight = 0.1 * vec4(uLightColor * lightD * color.rgb, color.a);
+            vec4 colorWithPosLight = 0.6 * vec4(uLightColor * lightP * color.rgb, color.a);
+            vec4 colorWithEspLight = 0.1 * vec4(uLightColor * pow(lightE, 50.0) * color.rgb, color.a);
+            vec4 colorWithAmbLight = 0.2 * color;
+
+
+            gl_FragColor = colorWithAmbLight + colorWithEspLight + colorWithPosLight + colorWithDirLight;
         }
     `,
     uniforms: {
