@@ -1,44 +1,55 @@
-export interface OBJVertex {
-  position: number[];
-  normal: number[];
-  uv: number[];
+interface OBJData {
+  vertices: number[];
+  normals: number[];
+  textureCoords: number[][];
+  faces: number[][];
+  // Outras propriedades opcionais do arquivo .obj
+  // ...
 }
 
-export interface OBJMesh {
-  vertices: OBJVertex[];
-  indices: number[];
-}
-
-export function parseOBJ(objData: string): OBJMesh {
-  const lines = objData.split("\n");
-  const vertices: OBJVertex[] = [];
-  const indices: number[] = [];
+export function parseOBJFile(objContent: string): OBJData {
+  const lines = objContent.split("\n");
+  const vertices: number[] = [];
+  const normals: number[] = [];
+  const textureCoords: number[][] = [];
+  const faces: number[][] = [];
 
   for (const line of lines) {
-    const parts = line.trim().split(" ");
-    const type = parts.shift();
-
-    if (type === "v") {
-      const position = parts.map(parseFloat);
-      vertices.push({ position, normal: [], uv: [] });
-    } else if (type === "vn") {
-      const normal = parts.map(parseFloat);
-      const lastVertex = vertices[vertices.length - 1];
-      lastVertex.normal = normal;
-    } else if (type === "vt") {
-      const uv = parts.map(parseFloat);
-      const lastVertex = vertices[vertices.length - 1];
-      lastVertex.uv = uv;
-    } else if (type === "f") {
-      for (const facePart of parts) {
-        const indicesData = facePart.split("/");
-        const vertexIndex = parseInt(indicesData[0]) - 1;
-        indices.push(vertexIndex);
-      }
+    if (line.startsWith("v ")) {
+      const vertex = line
+        .trim()
+        .split(/\s+/)
+        .slice(1)
+        .map((coord) => parseFloat(coord));
+      vertices.push(...vertex);
+    } else if (line.startsWith("vn ")) {
+      const normal = line
+        .trim()
+        .split(/\s+/)
+        .slice(1)
+        .map((coord) => parseFloat(coord));
+      normals.push(...normal);
+    } else if (line.startsWith("vt ")) {
+      const texCoord = line
+        .trim()
+        .split(/\s+/)
+        .slice(1)
+        .map((coord) => parseFloat(coord));
+      textureCoords.push(texCoord);
+    } else if (line.startsWith("f ")) {
     }
+    // Outros casos de linhas do arquivo .obj
+    // ...
   }
 
-  return { vertices, indices };
+  return {
+    vertices,
+    normals,
+    textureCoords,
+    faces,
+    // Outras propriedades extraídas do arquivo .obj
+    // ...
+  };
 }
 
 export const objMock = `

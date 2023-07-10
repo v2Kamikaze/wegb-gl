@@ -2,7 +2,7 @@ export const Shaders = {
   vertex: {
     src: `
         attribute vec4 aPos;
-        //attribute vec4 aColor;
+        attribute vec4 aColor;
         attribute vec3 aNormal;
 
         uniform mat4 uModel;
@@ -11,11 +11,14 @@ export const Shaders = {
         uniform vec3 uLightPosition;
         uniform vec3 uCameraPosition;
 
+        varying vec4 vColor;
         varying vec3 vNormal;
         varying vec3 vPoint2Light;
         varying vec3 vCameraPosition;
 
         void main() {
+            vColor = aColor;
+
             vCameraPosition = uCameraPosition - aPos.xyz;
             vPoint2Light = uLightPosition - aPos.xyz;
             vNormal = vec3(uModel * vec4(aNormal, 1.0));
@@ -50,7 +53,8 @@ export const Shaders = {
         varying vec3 vPoint2Light;
         varying vec3 vCameraPosition;
 
-        vec4 color = vec4(1.0, 1.0, 1.0, 1.0);
+        varying vec4 vColor;
+        vec4 color = vec4(0.9, 0.9, 0.9, 1.0);
 
         void main() {
             vec3 normal = normalize(vNormal);
