@@ -1,10 +1,11 @@
 import { glMatrix, mat4, vec3 } from "gl-matrix";
 import { GLUtils } from "./gl_utils";
-import { Polygons } from "./polygons";
+import { indices, normals, vertices } from "./polygons";
 import { Shaders } from "./shaders";
 import { objMock, parseOBJ } from "./obj";
 
-console.log(parseOBJ(objMock));
+const obj = parseOBJ(objMock);
+console.log(obj);
 
 // Shaders e inicializações do WegbGL
 const gl = GLUtils.InitGL();
@@ -16,9 +17,6 @@ const vertexShader = GLUtils.CreateVertexShader(gl, Shaders.vertex.src);
 const fragmentShader = GLUtils.CreateFragmentShader(gl, Shaders.fragment.src);
 const program = GLUtils.CreateProgram(gl, vertexShader, fragmentShader);
 gl.useProgram(program);
-
-const vertices = Polygons.Cube3D.vertices;
-const normals = Polygons.Cube3D.normals;
 
 const normalPointer = GLUtils.CreateArrayBuffer(
   gl,
@@ -34,19 +32,12 @@ const posPointer = GLUtils.CreateArrayBuffer(
   vertices
 );
 
-const colorPointer = GLUtils.CreateArrayBuffer(
-  gl,
-  program,
-  Shaders.vertex.attributes.aColor,
-  vertices
-);
+GLUtils.CreateIndexBuffer(gl, indices);
 
-gl.vertexAttribPointer(posPointer, 3, gl.FLOAT, false, 6 * 4, 0);
-gl.vertexAttribPointer(colorPointer, 3, gl.FLOAT, false, 6 * 4, 3 * 4);
+gl.vertexAttribPointer(posPointer, 3, gl.FLOAT, false, 3 * 4, 0);
 gl.vertexAttribPointer(normalPointer, 3, gl.FLOAT, false, 0, 0);
 
 gl.enableVertexAttribArray(posPointer);
-gl.enableVertexAttribArray(colorPointer);
 gl.enableVertexAttribArray(normalPointer);
 
 const uLightDirection = gl.getUniformLocation(
@@ -59,8 +50,14 @@ const uLightColor = gl.getUniformLocation(
   Shaders.fragment.uniforms.uLightColor
 );
 
-gl.uniform3fv(uLightDirection, [3, -5, 3]);
+const uLightPosition = gl.getUniformLocation(
+  program,
+  Shaders.vertex.uniforms.uLightPosition
+);
+
+gl.uniform3fv(uLightDirection, [0, -5, -3]);
 gl.uniform3fv(uLightColor, [1, 1, 1]);
+gl.uniform3fv(uLightPosition, [0, 5, 1]);
 
 var angleX = 0;
 var angleY = 0;
@@ -101,7 +98,7 @@ async function draw() {
   mat4.lookAt(view, cameraPosition, target, [0, 1, 0]);
   mat4.translate(view, view, direction);
 
-  mat4.perspective(projection, glMatrix.toRadian(20), aspectRatio, 0.1, 9999);
+  mat4.perspective(projection, glMatrix.toRadian(50), aspectRatio, 0.1, 9999);
 
   const uModel = gl.getUniformLocation(program, Shaders.vertex.uniforms.uModel);
   const uView = gl.getUniformLocation(program, Shaders.vertex.uniforms.uView);
@@ -116,7 +113,7 @@ async function draw() {
 
   GLUtils.ClearCanvas(gl);
 
-  gl.drawArrays(gl.TRIANGLES, 0, 36);
+  gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
 
   angleX += 0.001;
   angleY += 0.002;

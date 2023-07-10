@@ -10,7 +10,7 @@ export const GLUtils = {
     }
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.clearColor(0.5, 0.5, 0.4, 1);
+    gl.clearColor(0.2, 0.2, 0.2, 1);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     gl.enable(gl.DEPTH_TEST);
@@ -55,19 +55,35 @@ export const GLUtils = {
     );
   },
 
+  CreateIndexBuffer: function (
+    gl: WebGLRenderingContext,
+    indices: Uint16Array
+  ): WebGLBuffer {
+    const buffer = gl.createBuffer();
+    if (!buffer) {
+      throw new Error("Não foi possível criar o buffer de índices.");
+    }
+
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+
+    return buffer;
+  },
+
   CreateArrayBuffer: function (
     gl: WebGLRenderingContext,
     program: WebGLProgram,
     attrName: string,
-    data: BufferSource
+    data: BufferSource,
+    type: number = gl.ARRAY_BUFFER
   ): number {
     const bufferPointer = gl.createBuffer();
     if (!bufferPointer) {
       throw new Error("Não foi possível criar o buffer.");
     }
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, bufferPointer);
-    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+    gl.bindBuffer(type, bufferPointer);
+    gl.bufferData(type, data, gl.STATIC_DRAW);
 
     const positionPointer = gl.getAttribLocation(program, attrName);
     if (positionPointer === -1) {
