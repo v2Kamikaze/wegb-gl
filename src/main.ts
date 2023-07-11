@@ -1,14 +1,16 @@
-import { glMatrix, mat4, vec3 } from "gl-matrix";
+import { glMatrix, mat4, vec3, vec4 } from "gl-matrix";
 import { GLUtils } from "./gl_utils";
 import { cubeIndices, initCube, setUniformsToCube } from "./cube";
+import {
+  cubeTextureIndices,
+  initCubeTexture,
+  setUniformsToCubeTexture,
+} from "./cube_texture";
 
-/* for each shape
-gl.useProgram(program for shape) (if different from last shape)
-setup attributes for shape (if different from last shape)
-set uniforms
-  set a matrix uniform to position and orient the shape
-  set a color uniform for the color
-drawArrays/drawElements */
+const textures = await GLUtils.LoadTextures([
+  "../assets/catioro.png",
+  "../assets/gato.png",
+]);
 
 var angleX = 0;
 var angleY = 0;
@@ -22,9 +24,27 @@ const canvasWidth = gl.canvas.width;
 const canvasHeight = gl.canvas.height;
 const aspectRatio = canvasWidth / canvasHeight;
 
-const program2 = initCube(gl);
+const textureCachorro = gl.createTexture()!;
+GLUtils.LinkTexture(gl, textureCachorro, gl.TEXTURE0, textures[0]);
+const textureGato = gl.createTexture()!;
+GLUtils.LinkTexture(gl, textureGato, gl.TEXTURE0, textures[1]);
 
-const program = initCube(gl);
+const programCubeText = initCubeTexture(gl);
+const programCube1 = initCube(gl);
+const programCube2 = initCube(gl);
+
+const lightDirection = vec3.fromValues(0, 5, -3);
+const lightColor = vec3.fromValues(1, 1, 1);
+const lightPosition = vec3.fromValues(0.4, 0, 1);
+const up = vec3.fromValues(0, 1, 0);
+
+let model = mat4.create();
+const view = mat4.create();
+const projection = mat4.create();
+
+mat4.lookAt(view, cameraPosition, target, up);
+mat4.translate(view, view, direction);
+mat4.perspective(projection, glMatrix.toRadian(60), aspectRatio, 0.1, 9999);
 
 GLUtils.CreateIndexBuffer(gl, cubeIndices);
 
@@ -45,40 +65,26 @@ document.addEventListener("keydown", (e) => {
     case "d":
       vec3.add(direction, direction, [-0.1, 0, 0]);
       break;
+    case "q":
+      vec3.add(direction, direction, [0, -0.1, 0]);
+      break;
+    case "e":
+      vec3.add(direction, direction, [0, 0.1, 0]);
+      break;
   }
 });
 
 async function draw() {
   GLUtils.ClearCanvas(gl);
-
-  let model = mat4.create();
-  const view = mat4.create();
-  const projection = mat4.create();
-
-  mat4.rotateX(model, model, angleX);
-  mat4.rotateY(model, model, angleY);
-  mat4.rotateZ(model, model, angleZ);
-
-  mat4.lookAt(view, cameraPosition, target, [0, 1, 0]);
+  mat4.lookAt(view, cameraPosition, target, up);
   mat4.translate(view, view, direction);
 
-  mat4.perspective(projection, glMatrix.toRadian(50), aspectRatio, 0.1, 9999);
+  lightPosition[0] = 5 * Math.cos(Date.now() * 0.001);
 
-  gl.useProgram(program);
-  setUniformsToCube(gl, program, cameraPosition, model, view, projection);
-  gl.drawElements(gl.TRIANGLES, cubeIndices.length, gl.UNSIGNED_SHORT, 0);
+  drawCube1();
+  drawCube2();
 
-  model = mat4.create();
-  mat4.translate(model, model, [0, 3, 0]);
-
-  mat4.rotateX(model, model, angleX);
-  mat4.rotateY(model, model, angleY);
-  mat4.rotateZ(model, model, angleZ);
-
-  gl.useProgram(program2);
-  setUniformsToCube(gl, program2, cameraPosition, model, view, projection);
-
-  gl.drawElements(gl.TRIANGLES, cubeIndices.length, gl.UNSIGNED_SHORT, 0);
+  drawCubeText();
 
   angleX += 0.001;
   angleY += 0.002;
@@ -87,61 +93,72 @@ async function draw() {
   requestAnimationFrame(draw);
 }
 
-/* for each shape
-gl.useProgram(program for shape) (if different from last shape)
-setup attributes for shape (if different from last shape)
-set uniforms
-  set a matrix uniform to position and orient the shape
-  set a color uniform for the color
-drawArrays/drawElements */
+function drawCube1() {
+  model = mat4.create();
+  mat4.translate(model, model, [0, -3, 0]);
+  mat4.scale(model, model, [10, 0.5, 10]);
 
-/* const vertexShader = GLUtils.CreateVertexShader(gl, Shaders.vertex.src);
-const fragmentShader = GLUtils.CreateFragmentShader(gl, Shaders.fragment.src);
-const program = GLUtils.CreateProgram(gl, vertexShader, fragmentShader);
-gl.useProgram(program);
+  gl.useProgram(programCube1);
+  setUniformsToCube(
+    gl,
+    programCube1,
+    cameraPosition,
+    model,
+    view,
+    projection,
+    lightDirection,
+    lightColor,
+    lightPosition
+  );
+  gl.drawElements(gl.TRIANGLES, cubeIndices.length, gl.UNSIGNED_SHORT, 0);
+}
 
-const normalPointer = GLUtils.CreateArrayBuffer(
-  gl,
-  program,
-  Shaders.vertex.attributes.aNormal,
-  cubeNormals
-);
+function drawCube2() {
+  model = mat4.create();
+  mat4.translate(model, model, [3, 0, 0]);
 
-const posPointer = GLUtils.CreateArrayBuffer(
-  gl,
-  program,
-  Shaders.vertex.attributes.aPos,
-  cubeVertices
-);
+  gl.useProgram(programCube2);
+  setUniformsToCube(
+    gl,
+    programCube2,
+    cameraPosition,
+    model,
+    view,
+    projection,
+    lightDirection,
+    lightColor,
+    lightPosition,
+    vec4.fromValues(0.5, 0.7, 0.8, 1.0)
+  );
 
-gl.vertexAttribPointer(posPointer, 3, gl.FLOAT, false, 0, 0);
-gl.vertexAttribPointer(normalPointer, 3, gl.FLOAT, false, 0, 0);
+  gl.drawElements(gl.TRIANGLES, cubeIndices.length, gl.UNSIGNED_SHORT, 0);
+}
 
-gl.enableVertexAttribArray(posPointer);
-gl.enableVertexAttribArray(normalPointer);
+function drawCubeText() {
+  model = mat4.create();
+  mat4.translate(model, model, [-3, 1, 0]);
+  mat4.rotateX(model, model, angleX);
+  mat4.rotateY(model, model, angleY);
+  mat4.rotateZ(model, model, angleZ);
 
-const uLightDirection = gl.getUniformLocation(
-  program,
-  Shaders.fragment.uniforms.uLightDirection
-);
+  gl.useProgram(programCubeText);
+  setUniformsToCubeTexture(
+    gl,
+    programCubeText,
+    cameraPosition,
+    model,
+    view,
+    projection,
+    lightDirection,
+    lightColor,
+    lightPosition,
+    0
+  );
 
-const uLightColor = gl.getUniformLocation(
-  program,
-  Shaders.fragment.uniforms.uLightColor
-);
-
-const uLightPosition = gl.getUniformLocation(
-  program,
-  Shaders.vertex.uniforms.uLightPosition
-);
-
-const uCameraPosition = gl.getUniformLocation(
-  program,
-  Shaders.vertex.uniforms.uCameraPosition
-);
-
-gl.uniform3fv(uLightDirection, [0, -5, -3]);
-gl.uniform3fv(uLightColor, [1, 1, 1]);
-gl.uniform3fv(uLightPosition, [0, 5, 1]);
-gl.uniform3fv(uCameraPosition, cameraPosition);
- */
+  gl.drawElements(
+    gl.TRIANGLES,
+    cubeTextureIndices.length,
+    gl.UNSIGNED_SHORT,
+    0
+  );
+}

@@ -75,8 +75,7 @@ export const GLUtils = {
     program: WebGLProgram,
     attrName: string,
     data: BufferSource,
-    type: number = gl.ARRAY_BUFFER,
-    isColor: boolean = false
+    type: number = gl.ARRAY_BUFFER
   ): number {
     const bufferPointer = gl.createBuffer();
     if (!bufferPointer) {
@@ -84,9 +83,7 @@ export const GLUtils = {
     }
 
     gl.bindBuffer(type, bufferPointer);
-    if (!isColor) {
-      gl.bufferData(type, data, gl.STATIC_DRAW);
-    }
+    gl.bufferData(type, data, gl.STATIC_DRAW);
 
     const positionPointer = gl.getAttribLocation(program, attrName);
     if (positionPointer === -1) {

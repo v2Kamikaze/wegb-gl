@@ -1,8 +1,8 @@
-import { mat4, vec3, vec4 } from "gl-matrix";
+import { mat4, vec3 } from "gl-matrix";
 import { GLUtils } from "./gl_utils";
 
 // prettier-ignore
-export const cubeVertices = new Float32Array([
+const cubeVertices = new Float32Array([
   // Front face
   -1.0, -1.0, 1.0,
   1.0, -1.0, 1.0,
@@ -41,46 +41,46 @@ export const cubeVertices = new Float32Array([
 ]);
 
 // prettier-ignore
-export const cubeIndices = new Uint16Array([
-  0,
-  1,
-  2,
-  0,
-  2,
-  3, // front
-  4,
-  5,
-  6,
-  4,
-  6,
-  7, // back
-  8,
-  9,
-  10,
-  8,
-  10,
-  11, // top
-  12,
-  13,
-  14,
-  12,
-  14,
-  15, // bottom
-  16,
-  17,
-  18,
-  16,
-  18,
-  19, // right
-  20,
-  21,
-  22,
-  20,
-  22,
-  23, // left
-]);
+export const cubeTextureIndices =  [
+    0,
+    1,
+    2,
+    0,
+    2,
+    3, // front
+    4,
+    5,
+    6,
+    4,
+    6,
+    7, // back
+    8,
+    9,
+    10,
+    8,
+    10,
+    11, // top
+    12,
+    13,
+    14,
+    12,
+    14,
+    15, // bottom
+    16,
+    17,
+    18,
+    16,
+    18,
+    19, // right
+    20,
+    21,
+    22,
+    20,
+    22,
+    23, // left
+  ];
 
-export const cubeNormals = new Float32Array([
+const cubeNormals = new Float32Array([
   0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0,
 
   // Back
@@ -99,11 +99,27 @@ export const cubeNormals = new Float32Array([
   -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0,
 ]);
 
-export const CubeShaders = {
+const cubeTextureCoords = Float32Array.from([
+  // Front
+  0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
+  // Back
+  0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
+  // Top
+  0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
+  // Bottom
+  0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
+  // Right
+  0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
+  // Left
+  0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0,
+]);
+
+const CubeTextureShaders = {
   vertex: {
     src: `
         attribute vec4 aPos;
         attribute vec3 aNormal;
+        attribute vec2 aTextureCoord;
 
         uniform mat4 uModel;
         uniform mat4 uView;
@@ -111,11 +127,14 @@ export const CubeShaders = {
         uniform vec3 uLightPosition;
         uniform vec3 uCameraPosition;
 
+        varying vec2 vTextureCoord;
         varying vec3 vNormal;
         varying vec3 vPoint2Light;
         varying vec3 vCameraPosition;
 
+
         void main() {
+            vTextureCoord = aTextureCoord;
 
             vCameraPosition = uCameraPosition - aPos.xyz;
             vPoint2Light = uLightPosition - aPos.xyz;
@@ -134,10 +153,12 @@ export const CubeShaders = {
       aPos: "aPos",
       aColor: "aColor",
       aNormal: "aNormal",
+      aTextureCoord: "aTextureCoord",
     },
     varying: {
       vColor: "vColor",
       vNormal: "vNormal",
+      vTextureCoord: "vTextureCoord",
     },
   },
   fragment: {
@@ -146,41 +167,41 @@ export const CubeShaders = {
 
         uniform vec3 uLightDirection;
         uniform vec3 uLightColor;
-        uniform vec4 uColor;
 
         varying vec3 vNormal;
         varying vec3 vPoint2Light;
         varying vec3 vCameraPosition;
 
+        varying vec2 vTextureCoord;
+
+        uniform sampler2D uTexture;
 
         void main() {
             vec3 normal = normalize(vNormal);
 
-            vec3 point2Light = normalize(vPoint2Light);
+            vec3 point2Light = normalize(-vPoint2Light);
             vec3 lightDirection = normalize(-uLightDirection);
             vec3 cameraPosition = normalize(vCameraPosition);
 
             vec3 halfVec = normalize(cameraPosition + point2Light);
 
-            vec4 color = uColor;
-
             float lightD = max(dot(normal, lightDirection), 0.0);
             float lightP = max(dot(normal, point2Light), 0.0);
             float lightE = max(dot(normal, halfVec), 0.0);
 
+            vec4 color = texture2D(uTexture, vTextureCoord);
+
             vec4 colorWithDirLight = 0.1 * vec4(uLightColor * lightD * color.rgb, color.a);
             vec4 colorWithPosLight = 0.6 * vec4(uLightColor * lightP * color.rgb, color.a);
-            vec4 colorWithEspLight = 0.1 * vec4(uLightColor * pow(lightE, 100.0) * color.rgb, color.a);
+            vec4 colorWithEspLight = 0.1 * vec4(uLightColor * pow(lightE, 200.0) * color.rgb, color.a);
             vec4 colorWithAmbLight = 0.2 * color;
-
-
             gl_FragColor = colorWithAmbLight + colorWithEspLight + colorWithPosLight + colorWithDirLight;
         }
     `,
     uniforms: {
       uLightDirection: "uLightDirection",
       uLightColor: "uLightColor",
-      uColor: "uColor",
+      uTexture: "uTexture",
     },
     varying: {
       vColor: "vColor",
@@ -190,38 +211,52 @@ export const CubeShaders = {
   },
 };
 
-export function initCube(gl: WebGLRenderingContext) {
-  const vertexShader = GLUtils.CreateVertexShader(gl, CubeShaders.vertex.src);
+export function initCubeTexture(gl: WebGLRenderingContext) {
+  const vertexShader = GLUtils.CreateVertexShader(
+    gl,
+    CubeTextureShaders.vertex.src
+  );
   const fragmentShader = GLUtils.CreateFragmentShader(
     gl,
-    CubeShaders.fragment.src
+    CubeTextureShaders.fragment.src
   );
   const program = GLUtils.CreateProgram(gl, vertexShader, fragmentShader);
 
   const normalPointer = GLUtils.CreateArrayBuffer(
     gl,
     program,
-    CubeShaders.vertex.attributes.aNormal,
+    CubeTextureShaders.vertex.attributes.aNormal,
     cubeNormals
   );
 
   gl.vertexAttribPointer(normalPointer, 3, gl.FLOAT, false, 0, 0);
+
   gl.enableVertexAttribArray(normalPointer);
 
   const posPointer = GLUtils.CreateArrayBuffer(
     gl,
     program,
-    CubeShaders.vertex.attributes.aPos,
+    CubeTextureShaders.vertex.attributes.aPos,
     cubeVertices
   );
 
   gl.vertexAttribPointer(posPointer, 3, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(posPointer);
 
+  const textureCoordPointer = GLUtils.CreateArrayBuffer(
+    gl,
+    program,
+    CubeTextureShaders.vertex.attributes.aTextureCoord,
+    cubeTextureCoords
+  );
+
+  gl.vertexAttribPointer(textureCoordPointer, 2, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(textureCoordPointer);
+
   return program;
 }
 
-export function setUniformsToCube(
+export function setUniformsToCubeTexture(
   gl: WebGLRenderingContext,
   program: WebGLProgram,
   cameraPosition: vec3,
@@ -229,55 +264,56 @@ export function setUniformsToCube(
   view: mat4,
   projection: mat4,
   lightDirection: vec3,
-  ligthColor: vec3,
+  lightColor: vec3,
   lightPosition: vec3,
-  color = vec4.fromValues(1, 1, 1, 1)
+  texture: number
 ) {
   const uLightDirection = gl.getUniformLocation(
     program,
-    CubeShaders.fragment.uniforms.uLightDirection
+    CubeTextureShaders.fragment.uniforms.uLightDirection
   );
   gl.uniform3fv(uLightDirection, lightDirection);
 
   const uLightColor = gl.getUniformLocation(
     program,
-    CubeShaders.fragment.uniforms.uLightColor
+    CubeTextureShaders.fragment.uniforms.uLightColor
   );
-  gl.uniform3fv(uLightColor, ligthColor);
+  gl.uniform3fv(uLightColor, lightColor);
 
   const uLightPosition = gl.getUniformLocation(
     program,
-    CubeShaders.vertex.uniforms.uLightPosition
+    CubeTextureShaders.vertex.uniforms.uLightPosition
   );
   gl.uniform3fv(uLightPosition, lightPosition);
 
   const uCameraPosition = gl.getUniformLocation(
     program,
-    CubeShaders.vertex.uniforms.uCameraPosition
+    CubeTextureShaders.vertex.uniforms.uCameraPosition
   );
   gl.uniform3fv(uCameraPosition, cameraPosition);
 
   const uModel = gl.getUniformLocation(
     program,
-    CubeShaders.vertex.uniforms.uModel
+    CubeTextureShaders.vertex.uniforms.uModel
   );
   gl.uniformMatrix4fv(uModel, false, model);
 
   const uView = gl.getUniformLocation(
     program,
-    CubeShaders.vertex.uniforms.uView
+    CubeTextureShaders.vertex.uniforms.uView
   );
   gl.uniformMatrix4fv(uView, false, view);
 
   const uProjection = gl.getUniformLocation(
     program,
-    CubeShaders.vertex.uniforms.uProjection
+    CubeTextureShaders.vertex.uniforms.uProjection
   );
   gl.uniformMatrix4fv(uProjection, false, projection);
 
-  const uColor = gl.getUniformLocation(
+  const uTexture = gl.getUniformLocation(
     program,
-    CubeShaders.fragment.uniforms.uColor
+    CubeTextureShaders.fragment.uniforms.uTexture
   );
-  gl.uniform4fv(uColor, color);
+
+  gl.uniform1i(uTexture, texture);
 }
