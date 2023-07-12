@@ -102,7 +102,7 @@ export const cubeNormals = new Float32Array([
 export const CubeShaders = {
   vertex: {
     src: `
-        attribute vec4 aPos;
+        attribute vec3 aPos;
         attribute vec3 aNormal;
 
         uniform mat4 uModel;
@@ -116,11 +116,11 @@ export const CubeShaders = {
         varying vec3 vCameraPosition;
 
         void main() {
-
-            vCameraPosition = uCameraPosition - aPos.xyz;
-            vPoint2Light = uLightPosition - aPos.xyz;
+            vCameraPosition = uCameraPosition - aPos;
+            vPoint2Light = uLightPosition - aPos;
             vNormal = vec3(uModel * vec4(aNormal, 1.0));
-            gl_Position = uProjection * uView * uModel * aPos;
+
+            gl_Position = uProjection * uView * uModel * vec4(aPos, 1.0);
         }
     `,
     uniforms: {
@@ -168,13 +168,13 @@ export const CubeShaders = {
             float lightP = max(dot(normal, point2Light), 0.0);
             float lightE = max(dot(normal, halfVec), 0.0);
 
-            vec4 colorWithDirLight = 0.1 * vec4(uLightColor * lightD * color.rgb, color.a);
-            vec4 colorWithPosLight = 0.6 * vec4(uLightColor * lightP * color.rgb, color.a);
-            vec4 colorWithEspLight = 0.1 * vec4(uLightColor * pow(lightE, 100.0) * color.rgb, color.a);
+            vec4 colorWithDirLight = 0.2 * vec4(uLightColor * lightD * color.rgb, color.a);
+            vec4 colorWithPosLight = 0.4 * vec4(uLightColor * lightP * color.rgb, color.a);
+            vec4 colorWithEspLight = 0.2 * vec4(uLightColor * pow(lightE, 30.0) * color.rgb, color.a);
             vec4 colorWithAmbLight = 0.2 * color;
 
-
             gl_FragColor = colorWithAmbLight + colorWithEspLight + colorWithPosLight + colorWithDirLight;
+            gl_FragColor.a = 1.0;
         }
     `,
     uniforms: {
