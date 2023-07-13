@@ -49,6 +49,8 @@ const programCubeTextCat = initCubeTexture(gl);
 const programCubeTextDog = initCubeTexture(gl);
 const programCube1 = initCube(gl);
 const programCube2 = initCube(gl);
+const programCube3 = initCube(gl);
+const programCube4 = initCube(gl);
 
 let lightColor = vec3.fromValues(1, 1, 1);
 const lightPosition = vec3.fromValues(0, 0, 0);
@@ -164,11 +166,42 @@ async function draw() {
     view,
     projection,
     [0, -3, 0],
-    [0.6, 0.6, 0.6, 1.0],
+    [0.2, 0.4, 0.7, 1.0],
     [10, 0.2, 10]
   );
 
   drawCubeBasic(programCube2, view, projection, [3, 0, 0]);
+
+  // Parede esquerda
+  drawCubeBasic(
+    programCube2,
+    view,
+    projection,
+    [-10.2, 0, 0],
+    [0.2, 0.4, 0.2, 1.0],
+    [0.2, 3.2, 10]
+  );
+
+  // Parede direita
+  drawCubeBasic(
+    programCube3,
+    view,
+    projection,
+    [10.2, 0, 0],
+    [0.2, 0.2, 0.7, 1.0],
+    [0.2, 3.2, 10]
+  );
+
+  // Parede do fundo
+  drawCubeBasic(
+    programCube4,
+    view,
+    projection,
+    [0, 0, -10],
+    [0.7, 0.2, 0.2, 1.0],
+    [10.2, 3.2, 0.2]
+  );
+
   drawTextureCube(programCubeTextBox, view, projection, [-3, 0, 0], 0);
   drawTextureCube(programCubeTextCat, view, projection, [-3, 3, 0], 1);
   drawTextureCube(programCubeTextDog, view, projection, [3, 3, 0], 2);
@@ -218,11 +251,13 @@ function drawTextureCube(
   positon: vec3,
   texture: number
 ) {
+  const rotDir = texture % 2 === 0 ? -1 : 1;
+
   const model = mat4.create();
   mat4.translate(model, model, positon);
-  mat4.rotateX(model, model, angleX);
-  mat4.rotateY(model, model, angleY);
-  mat4.rotateZ(model, model, angleZ);
+  mat4.rotateX(model, model, angleX * rotDir);
+  mat4.rotateY(model, model, angleY * rotDir);
+  mat4.rotateZ(model, model, angleZ * rotDir);
 
   gl.useProgram(program);
   setUniformsToCubeTexture(
