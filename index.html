@@ -26,6 +26,10 @@
       gap: 1em;
     }
 
+    span {
+      color: #cc2222ff;
+    }
+
     canvas {
       border: 2px solid white;
     }
@@ -33,6 +37,14 @@
 
   <body>
     <main>
+      <h1>Para dar zoom use o scroll do mouse</h1>
+      <p>
+        Obs.:
+        <span
+          >Como não conseguimos capturar o mouse, o mouse não fica 100%
+          centralizado no canvas</span
+        >
+      </p>
       <div>
         <label for="sensibility">Sensibilidade do mouse</label>
         <input
@@ -56,7 +68,7 @@
         />
       </div>
 
-      <canvas id="app" width="600" height="600"></canvas>
+      <canvas id="app" width="800" height="600"></canvas>
     </main>
 
     <script type="module" src="/src/main.ts"></script>
