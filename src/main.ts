@@ -22,7 +22,7 @@ const lightColorInput = document.getElementById(
   "light-color"
 ) as HTMLInputElement;
 
-let sensibility = 0.4;
+let sensibility = 0.1;
 let angleX = 0;
 let angleY = 0;
 let angleZ = 0;
@@ -66,21 +66,17 @@ lightColorInput.addEventListener("change", (e) => {
   const target = e.target as HTMLInputElement;
   const color = target.value;
 
-  // Criar um elemento de tela temporário
   const canvas = document.createElement("canvas");
   canvas.width = 1;
   canvas.height = 1;
   const context = canvas.getContext("2d")!;
 
-  // Desenhar a cor no elemento de tela
   context.fillStyle = color;
   context.fillRect(0, 0, 1, 1);
 
-  // Obter os valores RGBA do pixel desenhado
   const imageData = context.getImageData(0, 0, 1, 1);
   const rgba = imageData.data;
 
-  // Converter os valores RGBA para números
   const r = rgba[0];
   const g = rgba[1];
   const b = rgba[2];
@@ -92,12 +88,23 @@ mouseSensibilityRange.addEventListener("change", (e) => {
   sensibility = target.valueAsNumber;
 });
 
+gl.canvas.addEventListener("mouseenter", () => {
+  const canvas = gl.canvas as HTMLCanvasElement;
+  const rect = canvas.getBoundingClientRect();
+  const canvasCenterX = rect.left + rect.width / 2;
+  const canvasCenterY = rect.top + rect.height / 2;
+
+  lastX = canvasCenterX;
+  lastY = canvasCenterY;
+});
+
 gl.canvas.addEventListener("mousemove", (e) => {
   let event = e as MouseEvent;
   const { clientX: xPos, clientY: yPos } = event;
 
   let xOffset = xPos - lastX;
   let yOffset = lastY - yPos;
+
   lastX = xPos;
   lastY = yPos;
 
@@ -107,12 +114,12 @@ gl.canvas.addEventListener("mousemove", (e) => {
   yaw += xOffset;
   pitch += yOffset;
 
-  if (pitch > 89.0) {
-    pitch = 89.0;
+  if (pitch > 179.0) {
+    pitch = 179.0;
   }
 
-  if (pitch < -89.0) {
-    pitch = -89.0;
+  if (pitch < -179.0) {
+    pitch = -179.0;
   }
 
   const front = vec3.create();
@@ -127,7 +134,7 @@ gl.canvas.addEventListener("mousemove", (e) => {
 
 gl.canvas.addEventListener("wheel", (e) => {
   let event = e as WheelEvent;
-  fovy += event.deltaY / 100;
+  fovy += event.deltaY / 50;
   if (fovy < 10.0) fovy = 10.0;
   if (fovy > 90.0) fovy = 90.0;
 });
